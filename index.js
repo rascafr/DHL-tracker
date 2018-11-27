@@ -4,7 +4,7 @@ const clc = require("cli-color");
 const red = clc.red.bold;
 const yellow = clc.yellow;
 
-const AWB_CODE = 'XX-YY-ZZ'; // 10 digit number from DHL
+const AWB_CODE = process.argv[2]; // 10 digit number from DHL
 let stepId = -1, newStepId = -1;
 
 // -------------------- functions -------------------- //
@@ -38,38 +38,35 @@ function getLastDeliveryStep(deliveryData) {
  * Main process loop
  */
 function mainLoop() {
-    setTimeout(() => {
-        console.log('====> asking DHL about updates...');
+	console.log('====> asking DHL about updates...');
+	// get data
+	getDeliveryResult(AWB_CODE, (deliverySteps) => {
 
-        // get data
-        getDeliveryResult(AWB_CODE, (deliverySteps) => {
+		// check if code is valid / has data
+		if (!deliverySteps) {
+			console.log(red('Error: given DHL AWB code is not valid, or DHL API returned some data I cannot use...'));
+			process.exit();
+		}
 
-            // check if code is valid / has data
-            if (!deliverySteps) {
-                console.log(red('Error: given DHL AWB code is not valid, or DHL API returned some data I cannot use...'));
-                process.exit();
-            }
+		// get the last one
+		let lastStep = getLastDeliveryStep(deliverySteps);
 
-            // get the last one
-            let lastStep = getLastDeliveryStep(deliverySteps);
+		// get step id
+		newStepId = lastStep.counter;
 
-            // get step id
-            newStepId = lastStep.counter;
+		// different?
+		if (newStepId !== stepId) {
+			stepId = newStepId;
+			let descScript = '====> DHL update available!\n====> New status: ' + lastStep.description;
+			console.log(red(descScript));
+			alert(descScript); // show a system alert when a new step is available
+		} else {
+			console.log(yellow('====> No update available...'));
+		}
 
-            // different?
-            if (newStepId !== stepId) {
-                stepId = newStepId;
-                let descScript = '====> DHL update available!\n====> New status: ' + lastStep.description;
-                console.log(red(descScript));
-                alert(descScript); // show a system alert when a new step is available
-            } else {
-                console.log(yellow('====> No update available...'));
-            }
-
-            console.log('====> done!');
-            mainLoop();
-        });
-    }, 60*1000); // each minute
+		console.log('====> done!');
+		setTimeout(mainLoop, 60*1000);
+	});
 }
 
 // -------------------- main code entry -------------------- //
@@ -96,5 +93,5 @@ console.log(`
 `
 )
 
-console.log(' === DHL tracker will start...soon! === ');
+console.log(' === DHL tracker will start... === ');
 mainLoop();
