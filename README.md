@@ -7,4 +7,4 @@ Simple Node.js DHL package tracker
 
 ## Execute
 
-``` node index.js [Your AWB Number] ```
+``` npm start [Your AWB Number] ```
